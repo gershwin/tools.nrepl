@@ -15,25 +15,25 @@ nREPL is available in Maven central. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
-[org.clojure/tools.nrepl "0.2.3"]
+[org.gershwinlang/tools.nrepl "0.2.0-master-SNAPSHOT"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
 
 ```xml
 <dependency>
-  <groupId>org.clojure</groupId>
+  <groupId>org.gershwinlang</groupId>
   <artifactId>tools.nrepl</artifactId>
-  <version>0.2.3</version>
+  <version>0.2.0-master-SNAPSHOT</version>
 </dependency>
 ```
 
-A list of all prior releases are available
+A list of all prior Clojure releases are available
 [here](http://search.maven.org/#search|gav|1|g%3A%22org.clojure%22%20AND%20a%3A%22tools.nrepl%22).
 
 Please note the changelog below.
 
-nREPL is compatible with Clojure 1.2.0 - 1.5.0.
+nREPL is compatible with Gershwin 0.2.0-master-SNAPSHOT and Clojure 1.2.0 - 1.5.0.
 
 Please post general questions or discussion on either the
 [clojure-dev](http://groups.google.com/group/clojure-dev/) or
