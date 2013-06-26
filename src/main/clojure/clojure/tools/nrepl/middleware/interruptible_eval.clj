@@ -2,7 +2,8 @@
      clojure.tools.nrepl.middleware.interruptible-eval
   (:require [clojure.tools.nrepl.transport :as t]
             clojure.tools.nrepl.middleware.pr-values
-            clojure.main)
+            clojure.main
+            [gershwin.core :refer [gershwin-eval]])
   (:use [clojure.tools.nrepl.misc :only (response-for returning)]
         [clojure.tools.nrepl.middleware :only (set-descriptor!)])
   (:import clojure.lang.LineNumberingPushbackReader
@@ -14,6 +15,19 @@
 (def ^{:dynamic true
        :doc "The message currently being evaluated."}
       *msg* nil)
+
+(defn- print-gershwin-stack
+  []
+  (print "\n--- Data Stack:\n")
+  (doseq [item (clojure.lang.GershwinStack/seq)]
+    (cond
+     (instance? clojure.lang.LazySeq item)
+     (println "(...LazySeq...)")
+
+     ;; For possible future print exceptions
+
+     :else
+     (prn item))))
 
 (defn evaluate
   "Evaluates some code within the dynamic context defined by a map of `bindings`,
@@ -46,14 +60,15 @@
                      (set! *1 (@bindings #'*1))
                      (set! *2 (@bindings #'*2))
                      (set! *3 (@bindings #'*3))
-                     (set! *e (@bindings #'*e)))   
+                     (set! *e (@bindings #'*e)))
             :read (if (string? code)
-                    (let [reader (LineNumberingPushbackReader. (StringReader. code))]
+                    (let [reader (LineNumberingPushbackReader. (StringReader. code) 2)]
                       #(read reader false %2))
                     (let [^java.util.Iterator code (.iterator code)]
                       #(or (and (.hasNext code) (.next code)) %2)))
             :prompt (fn [])
             :need-prompt (constantly false)
+            :eval gershwin-eval
             ; TODO pretty-print?
             :print (fn [v]
                      (reset! bindings (assoc (get-thread-bindings)
@@ -62,9 +77,10 @@
                                              #'*1 v))
                      (.flush ^Writer err)
                      (.flush ^Writer out)
-                     (t/send transport (response-for msg
-                                                     {:value v
-                                                      :ns (-> *ns* ns-name str)})))
+                     ;; (t/send transport (response-for msg
+                     ;;                                 {:value v
+                     ;;                                  :ns (-> *ns* ns-name str)}))
+                     (print-gershwin-stack))
             ; TODO customizable exception prints
             :caught (fn [e]
                       (let [root-ex (#'clojure.main/root-cause e)]
@@ -171,7 +187,7 @@
                 (returning (dissoc (evaluate @session msg) #'*msg*)
                   (t/send transport (response-for msg :status :done))
                   (alter-meta! session dissoc :thread :eval-msg)))))))
-      
+
       "interrupt"
       ; interrupts are inherently racy; we'll check the agent's :eval-msg's :id and
       ; bail if it's different than the one provided, but it's possible for
@@ -192,7 +208,7 @@
               (.stop thread)
               (t/send transport (response-for msg :status #{:done}))))
           (t/send transport (response-for msg :status #{:error :interrupt-id-mismatch :done}))))
-      
+
       (h msg))))
 
 (set-descriptor! #'interruptible-eval
