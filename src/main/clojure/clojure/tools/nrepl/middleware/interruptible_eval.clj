@@ -77,10 +77,11 @@
                                              #'*1 v))
                      (.flush ^Writer err)
                      (.flush ^Writer out)
-                     ;; (t/send transport (response-for msg
-                     ;;                                 {:value v
-                     ;;                                  :ns (-> *ns* ns-name str)}))
-                     (print-gershwin-stack))
+                     (t/send transport (response-for msg
+                                                     {:value {:stack (clojure.lang.GershwinStack/seq)}
+                                                      :ns (-> *ns* ns-name str)}))
+                     ;; (print-gershwin-stack)
+                     )
             ; TODO customizable exception prints
             :caught (fn [e]
                       (let [root-ex (#'clojure.main/root-cause e)]
